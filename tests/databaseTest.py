@@ -1,5 +1,5 @@
 
-from database import Haushaltsverwaltung
+from data.database import Haushaltsverwaltung
 
 def test_haushaltsverwaltung():
     verwaltung = Haushaltsverwaltung()
