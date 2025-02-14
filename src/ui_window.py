@@ -1,9 +1,3 @@
-"""GUI Version 1.2 mit platzhalter für sqlite"""
-"""Details ins Introduction_README(in work) ----> 
-pip install 
-PyQt5
-sqlite3"""
-
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QTableWidget,
                              QTableWidgetItem, QHBoxLayout, QLabel, QLineEdit, QComboBox, QMessageBox, QDateEdit,
@@ -16,7 +10,7 @@ class Haushaltsbuch(QMainWindow):
         super().__init__()
         self.setWindowTitle("Haushaltsbuch")
         self.setGeometry(200, 200, 750, 550)
-        self.setWindowIcon(QIcon("assets/ra.jpg"))  # Eigenes Icon setzen
+        self.setWindowIcon(QIcon("../docs/ra.jpg"))  # Eigenes Icon setzen
 
         # Daten-Speicher (Dummy-Daten)
         self.entries = [
