@@ -1,4 +1,6 @@
 import sqlite3
+from datetime import datetime, timedelta
+
 
 class Haushaltsverwaltung:
     def __init__(self, database="Haushaltspläne.db"):
@@ -11,14 +13,15 @@ class Haushaltsverwaltung:
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS Haushaltsplaene (
             id INTEGER PRIMARY KEY,
-            name TEXT
+            name TEXT,
+            lastChecked TEXT
         )
         """)
 
         # Einfügen der Haushaltspläne
-        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name) VALUES (1, 'Haushaltsplan Beispiel')")
-        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name) VALUES (2, 'Haushaltsplan (inaktiv)')")
-        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name) VALUES (3, 'Haushaltsplan (inaktiv)')")
+        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (1, 'Haushaltsplan Beispiel', '2025-02-13')")
+        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (2, 'Haushaltsplan (inaktiv)', '2025-02-13')")
+        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (3, 'Haushaltsplan (inaktiv)', '2025-02-13')")
 
         # Erstellen der Tabelle Eintraege
         self.cursor.execute("""
@@ -30,13 +33,25 @@ class Haushaltsverwaltung:
             bereich TEXT,
             typ TEXT,
             datum TEXT,
+            reihe INTEGER,
             FOREIGN KEY(planid) REFERENCES Haushaltsplaene (id)
         )
         """)
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Reihe (
+            reihenID INTEGER Primary KEY,
+            eintragID INTEGER,
+            intervall text,
+            von TEXT,
+            bis TEXT,
+            FOREIGN KEY(eintragID) REFERENCES Eintraege (eintragid)
+            
+        )
+        """)
         #Einfügen von Beispieldaten
-        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum) VALUES (1, 1, 'Gehalt', 2500, 'Arbeit', 'Einkommen', '2025-01-12')")
-        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum) VALUES (2, 1, 'Asiatisch Essen', 30, 'Verpflegung', 'Ausgaben', '2025-01-11')")
-        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum) VALUES (3, 1, 'Europa Park', 250, 'Freizeit', 'Ausgaben', '2025-01-12')")
+        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (1, 1, 'Gehalt', 2500, 'Arbeit', 'Einkommen', '2025-01-12', 1)")
+        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (2, 1, 'Asiatisch Essen', 30, 'Verpflegung', 'Ausgaben', '2025-01-11', 1)")
+        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (3, 1, 'Europa Park', 250, 'Freizeit', 'Ausgaben', '2025-01-12', 1)")
 
         # Änderungen speichern
         self.conn.commit()
@@ -69,10 +84,51 @@ class Haushaltsverwaltung:
         self.conn.commit()
 
 
+    def addEintrag(self, planid, name, wert, bereich, typ, datum, reihe=None, intervall=None, von=None, bis=None):
+        self.cursor.execute("INSERT INTO Eintraege (planid, name, wert, bereich, typ, datum, reihe) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (planid, name, wert, bereich, typ, datum, reihe))
+
+        eintragID = (self.cursor.lastrowid) #Generiert die ID für den Eintrag
+
+        if intervall and von and bis:
+            self.addWiederkehrende(eintragID, intervall, von, bis)
+        self.conn.commit()
+
+    def addWiederkehrende(self, eintragID, intervall, von, bis):
+        # Aktuelles Datum, Monat und Jahr einholen
+        today = datetime.now()
+        currentMonth = today.month
+        currentYear = today.year
+
+        # Start- und Enddatum konvertieren
+        startDate = datetime.strptime(von, "%Y-%m-%d")
+        endDate = datetime.strptime(bis, "%Y-%m-%d")
+        currentDate = startDate
+
+        while currentDate <= endDate:
+            # Überprüfen, ob das aktuelle Datum im aktuellen Monat und Jahr liegt
+            if currentDate.month == currentMonth and currentDate.year == currentYear:
+                newDate = currentDate.strftime("%Y-%m-%d")
+                self.cursor.execute("INSERT INTO Eintraege (planid, name, wert, bereich, typ, datum, reihe) SELECT planid, name, wert, bereich, typ, ?, reihe FROM Eintraege WHERE eintragid = ?", (newDate, eintragID))
+
+            # Erhöhe das Datum je nach Intervall
+            if intervall == "täglich":
+                currentDate += timedelta(days=1)
+            elif intervall == "wöchentlich":
+                currentDate += timedelta(weeks=1)
+            elif intervall == "monatlich":
+                currentDate += timedelta(days=30)  # Grobe Schätzung für einen Monat
+            elif intervall == "jährlich":
+                currentDate += timedelta(days=365)  # Grobe Schätzung für ein Jahr
+
+
+
+
+
     def fetchAllEintraege(self, planid, sort_by=None, filter_name=None, filter_bereich=None,
                           filter_typ=None, filter_date=None, filter_wert_von=None, filter_wert_bis=None):
         #Holt alle Einträge für einen bestimmten Plan, sortiert und gefiltert nach den angegebenen Kriterien.
-        query = "SELECT name, wert, bereich, typ, datum FROM Eintraege WHERE planid = ?"
+        query = "SELECT name, wert, bereich, typ, datum, reihe FROM Eintraege WHERE planid = ?"
         params = [planid]
 
         if filter_name:
@@ -104,3 +160,11 @@ class Haushaltsverwaltung:
 
         self.cursor.execute(query, params)
         return self.cursor.fetchall()
+
+
+test = Haushaltsverwaltung()
+eintragstest = test.fetchAllEintraege(1)
+print(eintragstest)
+test.close()
+
+
