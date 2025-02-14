@@ -168,4 +168,3 @@ print(eintragstest)
 test.close()
 
 
-
