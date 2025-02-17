@@ -80,6 +80,37 @@ class Haushaltsverwaltung:
         currentTime = datetime.strptime(currentTime, "%d-%m-%Y %H:%M:%S")
         return currentTime
 
+    def remainingDays(self, datumVon, datumBis, currentMonth):
+        if isinstance(datumVon, str):
+            datumVon = datetime.strptime(datumVon, "%d-%m-%Y")
+        if isinstance(datumBis, str):
+            datumBis = datetime.strptime(datumBis, "%d-%m-%Y")
+        if isinstance(currentMonth, str):
+            currentMonth = datetime.strptime(currentMonth, "%d-%m-%Y")
+        #datumVon = datumVon - timedelta(days=1)
+        remainingDays = datumBis - datumVon
+
+        return remainingDays.days
+
+    def fetchEntryByReihenID(self, reihenID):
+        query = """
+        SELECT e.*
+        FROM Eintraege e
+        JOIN Reihe r ON e.eintragid = r.eintragID
+        WHERE r.reihenID = ?
+        """
+        self.cursor.execute(query, (reihenID,))
+        return self.cursor.fetchone()  # Gibt die erste gefundene Zeile zurück
+
+    """
+    def autoAddDays(self, reihenID, datumVon, datumBis, remainingDays):
+        if isinstance(datumVon, str):
+            datumVon = datetime.strptime(datumVon, "%d-%m-%Y")
+        if isinstance(datumBis, str):
+            datumBis = datetime.strptime(datumBis, "%d-%m-%Y")
+        autoFillIn = Haushaltsverwaltung.fetchEntryByReihenID(reihenID)
+        for i in range(remainingDays):
+    """
 
     def formatTimeAgo(lastChecked):
         # Konvertiere den gespeicherten Zeitstempel in ein datetime-Objekt
@@ -139,57 +170,33 @@ class Haushaltsverwaltung:
         self.cursor.execute("INSERT INTO Reihe (eintragID, intervall, von, bis) VALUES (?, ?, ?, ?)"
                             , (eintragID, intervall, von, bis))
         self.conn.commit()
-
+    """
     def checkDailies(self, planID):
         currentDay = datetime.now()
         currentMonth = currentDay.month
         currentYear = currentDay.year
 
         self.cursor.execute("""
-        SELECT e.eintragid, e.planid, e.name, e.wert, e.bereich, e.typ, e.reihe, r.intervall , r.von, r.bis
-        FROM Eintraege e
-        JOIN Reihe r ON e.eintragid = r.eintragID
-        WHERE e.planid = ? AND r.intervall = 'täglich'
+        #SELECT e.eintragid, e.planid, e.name, e.wert, e.bereich, e.typ, e.reihe, r.intervall , r.von, r.bis
+        #FROM Eintraege e
+        #JOIN Reihe r ON e.eintragid = r.eintragID
+        #WHERE e.planid = ? AND r.intervall = 'täglich'
 
 
 
-    """
-    def addWiederkehrende(self, eintragID, intervall, von, bis):
-        # Aktuelles Datum, Monat und Jahr einholen
-        today = datetime.now()
-        currentMonth = today.month
-        currentYear = today.year
 
-        # Start- und Enddatum konvertieren
-        startDate = datetime.strptime(von, "%Y-%m-%d")
-        endDate = datetime.strptime(bis, "%Y-%m-%d")
-        currentDate = startDate
 
-        while currentDate <= endDate:
-            # Überprüfen, ob das aktuelle Datum im aktuellen Monat und Jahr liegt
-            if currentDate.month == currentMonth and currentDate.year == currentYear:
-                newDate = currentDate.strftime("%Y-%m-%d")
-                self.cursor.execute("INSERT INTO Eintraege (planid, name, wert, bereich, typ, datum, reihe) SELECT planid, name, wert, bereich, typ, ?, reihe FROM Eintraege WHERE eintragid = ?", (newDate, eintragID))
 
-            # Erhöhe das Datum je nach Intervall
-            if intervall == "täglich":
-                currentDate += timedelta(days=1)
-            elif intervall == "wöchentlich":
-                currentDate += timedelta(weeks=1)
-            elif intervall == "monatlich":
-                currentDate += timedelta(days=30)  # Grobe Schätzung für einen Monat
-            elif intervall == "jährlich":
-                currentDate += timedelta(days=365)  # Grobe Schätzung für ein Jahr
-            """
+
 
     def fetchAllEintraege(self, planid, sort_by=None, filter_name=None, filter_bereich=None,
                           filter_typ=None, filter_date=None, filter_wert_von=None, filter_wert_bis=None):
         # Holt alle Einträge für einen bestimmten Plan, sortiert und gefiltert nach den angegebenen Kriterien.
         query = """
-        SELECT e.name, e.wert, e.bereich, e.typ, e.datum, e.reihe, r.intervall, r.von, r.bis 
-        FROM Eintraege e
-        LEFT JOIN Reihe r ON e.eintragid = r.eintragID
-        WHERE e.planid = ?
+        #SELECT e.name, e.wert, e.bereich, e.typ, e.datum, e.reihe, r.intervall, r.von, r.bis
+        #FROM Eintraege e
+        #LEFT JOIN Reihe r ON e.eintragid = r.eintragID
+        #WHERE e.planid = ?
         """
         params = [planid]
 
@@ -224,10 +231,10 @@ class Haushaltsverwaltung:
         return self.cursor.fetchall()
 
 
-test = Haushaltsverwaltung()
-eintragstest = test.fetchAllEintraege(1)
-print(eintragstest)
-test.close()
+#test = Haushaltsverwaltung()
+#eintragstest = test.fetchAllEintraege(1)
+#print(eintragstest)
+#test.close()
 
 
 
