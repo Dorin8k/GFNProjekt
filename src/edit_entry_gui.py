@@ -64,7 +64,7 @@ class EditEntryGUI(QtWidgets.QWidget):
 
     def load_entry(self):
         """Lädt die bestehenden Daten des Eintrags aus der Datenbank."""
-        conn = sqlite3.connect("../Haushaltspläne.db")
+        conn = sqlite3.connect("../data/Haushaltsplan.db")
         cursor = conn.cursor()
         cursor.execute("SELECT name, wert, typ, datum, bereich FROM Eintraege WHERE eintragid = ?", (self.entry_id,))
         entry = cursor.fetchone()
@@ -89,7 +89,7 @@ class EditEntryGUI(QtWidgets.QWidget):
             QMessageBox.warning(self, "Fehler", "Der Name darf nicht leer sein.")
             return
 
-        conn = sqlite3.connect("../Haushaltspläne.db")
+        conn = sqlite3.connect("../data/Haushaltsplan.db")
         cursor = conn.cursor()
         cursor.execute("UPDATE Eintraege SET name = ?, wert = ?, typ = ?, datum = ?, bereich = ? WHERE eintragid = ?",
                        (name, value, entry_type, date, category, self.entry_id))

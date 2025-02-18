@@ -1,11 +1,9 @@
 import sys
 import sqlite3
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QLabel, QLineEdit, QComboBox, QSpinBox, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, \
-    QDateEdit, QMessageBox
+from PyQt5.QtWidgets import QLabel, QLineEdit, QComboBox, QSpinBox, QPushButton, QVBoxLayout, QHBoxLayout, QDateEdit, QMessageBox
 
-
-class NewEntryGUI(QtWidgets.QWidget):
+class NewEntryGUI(QtWidgets.QDialog):  # Jetzt QDialog statt QWidget!
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Neuen Eintrag erstellen")
@@ -51,8 +49,9 @@ class NewEntryGUI(QtWidgets.QWidget):
         button_layout = QHBoxLayout()
         self.save_button = QPushButton("Speichern")
         self.save_button.clicked.connect(self.save_entry)
+
         self.cancel_button = QPushButton("Abbrechen")
-        self.cancel_button.clicked.connect(self.close)
+        self.cancel_button.clicked.connect(self.reject)  # Verhindert Fehler beim Schließen
 
         button_layout.addWidget(self.save_button)
         button_layout.addWidget(self.cancel_button)
@@ -62,6 +61,7 @@ class NewEntryGUI(QtWidgets.QWidget):
 
     def save_entry(self):
         """Speichert den neuen Eintrag in die Datenbank."""
+
         name = self.name_input.text()
         entry_type = self.type_dropdown.currentText()
         value = self.value_input.value()
@@ -72,19 +72,19 @@ class NewEntryGUI(QtWidgets.QWidget):
             QMessageBox.warning(self, "Fehler", "Der Name darf nicht leer sein.")
             return
 
-        conn = sqlite3.connect("../Haushaltspläne.db")
+        conn = sqlite3.connect("../data/Haushaltsplan.db")
         cursor = conn.cursor()
         cursor.execute("INSERT INTO Eintraege (name, wert, typ, datum, bereich) VALUES (?, ?, ?, ?, ?)",
                        (name, value, entry_type, date, category))
+        print(cursor.fetchone())  # Sollte ('Eintraege',)
         conn.commit()
         conn.close()
 
         QMessageBox.information(self, "Erfolgreich", "Eintrag wurde gespeichert.")
-        self.close()
+        self.accept()  # Fenster schließen
 
-
-if __name__ == "__main__":
+"""if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = NewEntryGUI()
-    window.show()
-    sys.exit(app.exec_())
+    window.exec_()  # Nutzt exec_(), damit es modal bleibt
+"""
