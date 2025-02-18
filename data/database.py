@@ -1,5 +1,7 @@
 import sqlite3
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 
 class Haushaltsverwaltung:
@@ -17,11 +19,11 @@ class Haushaltsverwaltung:
             lastChecked TEXT
         )
         """)
-
+        erzeugungsZeit = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         # Einfügen der Haushaltspläne
-        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (1, 'Haushaltsplan Beispiel', '2025-02-13')")
-        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (2, 'Haushaltsplan (inaktiv)', '2025-02-13')")
-        self.cursor.execute("INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (3, 'Haushaltsplan (inaktiv)', '2025-02-13')")
+        self.cursor.execute(f"INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (1, 'Haushaltsplan Beispiel', '{erzeugungsZeit}')")
+        self.cursor.execute(f"INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (2, 'Haushaltsplan (inaktiv)', '{erzeugungsZeit}')")
+        self.cursor.execute(f"INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (3, 'Haushaltsplan (inaktiv)', '{erzeugungsZeit}')")
 
         # Erstellen der Tabelle Eintraege
         self.cursor.execute("""
@@ -49,9 +51,9 @@ class Haushaltsverwaltung:
         )
         """)
         #Einfügen von Beispieldaten
-        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid,  planid, name, wert, bereich, typ, datum, reihe) VALUES (1, 1, 'Gehalt', 2500, 'Arbeit', 'Einkommen', '2025-01-12', 1)")
-        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (2, 1, 'Asiatisch Essen', 30, 'Verpflegung', 'Ausgaben', '2025-01-11', 1)")
-        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (3, 1, 'Europa Park', 250, 'Freizeit', 'Ausgaben', '2025-01-12', 1)")
+        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid,  planid, name, wert, bereich, typ, datum, reihe) VALUES (1, 1, 'Gehalt', 2500, 'Arbeit', 'Einkommen', '12-01-2025', 1)")
+        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (2, 1, 'Asiatisch Essen', 30, 'Verpflegung', 'Ausgaben', '12-01-2025', 1)")
+        self.cursor.execute("INSERT OR IGNORE INTO Eintraege (eintragid, planid, name, wert, bereich, typ, datum, reihe) VALUES (3, 1, 'Europa Park', 250, 'Freizeit', 'Ausgaben', '12-01-2025', 1)")
 
         # Änderungen speichern
         self.conn.commit()
@@ -66,10 +68,50 @@ class Haushaltsverwaltung:
         return (maxID + 1) if maxID is not None else 1 #Wenn noch keine ID Vorhanden, nimm 1
     """
 
+    def autoAddEntry(self, oldTime, planid):
+        currentTime = datetime.now()
+        result = self.cursor.execute("""SELECT e.datum, r.von, r.bis, r.intervall, e.wert, e.name, e.typ, e.bereich, r.reihenID FROM Reihe r
+        JOIN Eintraege e ON r.eintragid = e.eintragid WHERE planid = ?
+        """, (planid,))
+        for value in result:
+            datumVon = datetime.strptime(value[1], "%d-%m-%Y")
+            datumBis = datetime.strptime(value[2], "%d-%m-%Y")
+            if currentTime > datumVon and oldTime < datumBis:
+                eintragDatum = datetime.strptime(value[0], "%d-%m-%Y")
+                match value[3]:
+                    case "täglich":
+                        intervall = relativedelta(days=1)
+                    case "wöchentlich":
+                        intervall = relativedelta(weeks=1)
+                    case "monatlich":
+                        intervall = relativedelta(months=1)
+                    case "jährlich":
+                        intervall = relativedelta(years=1)
+
+                nextDate = eintragDatum + intervall
+                i = 0
+                while (i < 5000):
+                    if nextDate > datumVon and nextDate < datumBis and nextDate < currentTime and nextDate > oldTime:
+                        nextEntryDatum = datetime.strftime(nextDate, "%d-%m-%Y")
+                        Haushaltsverwaltung.addEintrag(self, planid, value[5], value[4], value[7], value[6], nextEntryDatum, value[8])
+                    if nextDate > currentTime:
+                        break
+                    nextDate = nextDate + intervall
+                    i = i + 1
+
+
+
+
+
+
+
+
     def updateLastChecked(self, planid):
         # Aktuelles Datum und Uhrzeit abrufen
         current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-
+        oldTime = Haushaltsverwaltung.lastChecked(self, planid)
+        if oldTime.year < datetime.now().year or oldTime.month < datetime.now().month or oldTime.day < datetime.now().day:
+            Haushaltsverwaltung.autoAddEntry(self, oldTime, planid)
         # SQL-Update-Anweisung ausführen
         self.cursor.execute("UPDATE Haushaltsplaene SET lastChecked = ? WHERE id = ?", (current_time, planid))
         self.conn.commit()
@@ -80,17 +122,7 @@ class Haushaltsverwaltung:
         currentTime = datetime.strptime(currentTime, "%d-%m-%Y %H:%M:%S")
         return currentTime
 
-    def remainingDays(self, datumVon, datumBis, currentMonth):
-        if isinstance(datumVon, str):
-            datumVon = datetime.strptime(datumVon, "%d-%m-%Y")
-        if isinstance(datumBis, str):
-            datumBis = datetime.strptime(datumBis, "%d-%m-%Y")
-        if isinstance(currentMonth, str):
-            currentMonth = datetime.strptime(currentMonth, "%d-%m-%Y")
-        #datumVon = datumVon - timedelta(days=1)
-        remainingDays = datumBis - datumVon
 
-        return remainingDays.days
 
     def fetchEntryByReihenID(self, reihenID):
         query = """
@@ -102,15 +134,7 @@ class Haushaltsverwaltung:
         self.cursor.execute(query, (reihenID,))
         return self.cursor.fetchone()  # Gibt die erste gefundene Zeile zurück
 
-    """
-    def autoAddDays(self, reihenID, datumVon, datumBis, remainingDays):
-        if isinstance(datumVon, str):
-            datumVon = datetime.strptime(datumVon, "%d-%m-%Y")
-        if isinstance(datumBis, str):
-            datumBis = datetime.strptime(datumBis, "%d-%m-%Y")
-        autoFillIn = Haushaltsverwaltung.fetchEntryByReihenID(reihenID)
-        for i in range(remainingDays):
-    """
+
 
     def formatTimeAgo(lastChecked):
         # Konvertiere den gespeicherten Zeitstempel in ein datetime-Objekt
@@ -170,33 +194,19 @@ class Haushaltsverwaltung:
         self.cursor.execute("INSERT INTO Reihe (eintragID, intervall, von, bis) VALUES (?, ?, ?, ?)"
                             , (eintragID, intervall, von, bis))
         self.conn.commit()
-    """
-    def checkDailies(self, planID):
-        currentDay = datetime.now()
-        currentMonth = currentDay.month
-        currentYear = currentDay.year
-
-        self.cursor.execute("""
-        #SELECT e.eintragid, e.planid, e.name, e.wert, e.bereich, e.typ, e.reihe, r.intervall , r.von, r.bis
-        #FROM Eintraege e
-        #JOIN Reihe r ON e.eintragid = r.eintragID
-        #WHERE e.planid = ? AND r.intervall = 'täglich'
-
-
-
-
 
 
 
 
     def fetchAllEintraege(self, planid, sort_by=None, filter_name=None, filter_bereich=None,
                           filter_typ=None, filter_date=None, filter_wert_von=None, filter_wert_bis=None):
+        Haushaltsverwaltung.updateLastChecked(self, planid)
         # Holt alle Einträge für einen bestimmten Plan, sortiert und gefiltert nach den angegebenen Kriterien.
         query = """
-        #SELECT e.name, e.wert, e.bereich, e.typ, e.datum, e.reihe, r.intervall, r.von, r.bis
-        #FROM Eintraege e
-        #LEFT JOIN Reihe r ON e.eintragid = r.eintragID
-        #WHERE e.planid = ?
+        SELECT e.name, e.wert, e.bereich, e.typ, e.datum, e.reihe, r.intervall, r.von, r.bis
+        FROM Eintraege e
+        LEFT JOIN Reihe r ON e.eintragid = r.eintragID
+        WHERE e.planid = ?
         """
         params = [planid]
 
