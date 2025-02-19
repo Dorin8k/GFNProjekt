@@ -19,7 +19,7 @@ class Haushaltsverwaltung:
             lastChecked TEXT
         )
         """)
-        erzeugungsZeit = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        erzeugungsZeit = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         # Einfügen der Haushaltspläne
         self.cursor.execute(f"INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (1, 'Haushaltsplan Beispiel', '{erzeugungsZeit}')")
         self.cursor.execute(f"INSERT OR IGNORE INTO Haushaltsplaene (id, name, lastChecked) VALUES (2, 'Haushaltsplan (inaktiv)', '{erzeugungsZeit}')")
@@ -74,10 +74,10 @@ class Haushaltsverwaltung:
         JOIN Eintraege e ON r.eintragid = e.eintragid WHERE planid = ?
         """, (planid,))
         for value in result:
-            datumVon = datetime.strptime(value[1], "%d-%m-%Y")
-            datumBis = datetime.strptime(value[2], "%d-%m-%Y")
+            datumVon = datetime.strptime(value[1], "%d.%m.%Y")
+            datumBis = datetime.strptime(value[2], "%d.%m.%Y")
             if currentTime > datumVon and oldTime < datumBis:
-                eintragDatum = datetime.strptime(value[0], "%d-%m-%Y")
+                eintragDatum = datetime.strptime(value[0], "%d.%m.%Y")
                 match value[3]:
                     case "täglich":
                         intervall = relativedelta(days=1)
@@ -92,7 +92,7 @@ class Haushaltsverwaltung:
                 i = 0
                 while (i < 5000):
                     if nextDate > datumVon and nextDate < datumBis and nextDate < currentTime and nextDate > oldTime:
-                        nextEntryDatum = datetime.strftime(nextDate, "%d-%m-%Y")
+                        nextEntryDatum = datetime.strftime(nextDate, "%d.%m.%Y")
                         Haushaltsverwaltung.addEintrag(self, planid, value[5], value[4], value[7], value[6], nextEntryDatum, value[8])
                     if nextDate > currentTime:
                         break
@@ -108,18 +108,17 @@ class Haushaltsverwaltung:
 
     def updateLastChecked(self, planid):
         # Aktuelles Datum und Uhrzeit abrufen
-        current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        current_time = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         oldTime = Haushaltsverwaltung.lastChecked(self, planid)
         if oldTime.year < datetime.now().year or oldTime.month < datetime.now().month or oldTime.day < datetime.now().day:
             Haushaltsverwaltung.autoAddEntry(self, oldTime, planid)
-        # SQL-Update-Anweisung ausführen
         self.cursor.execute("UPDATE Haushaltsplaene SET lastChecked = ? WHERE id = ?", (current_time, planid))
         self.conn.commit()
 
     def lastChecked(self, planID):
         currentTime = self.cursor.execute("SELECT lastChecked FROM Haushaltsplaene WHERE id = ?", (planID, ))
         currentTime = currentTime.fetchone()[0]
-        currentTime = datetime.strptime(currentTime, "%d-%m-%Y %H:%M:%S")
+        currentTime = datetime.strptime(currentTime, "%d.%m.%Y %H:%M:%S")
         return currentTime
 
 
@@ -136,9 +135,9 @@ class Haushaltsverwaltung:
 
 
 
-    def formatTimeAgo(lastChecked):
-        # Konvertiere den gespeicherten Zeitstempel in ein datetime-Objekt
-        last_checked_time = datetime.strptime(lastChecked, "%d-%m-%Y %H:%M:%S")
+    def formatTimeAgo(self, planid):
+        # holt über die lastChecked funktion ein Zeitobjekt ein, dass der DB entnommen wurde
+        last_checked_time = datetime(self.lastChecked(planid), "%d.%m.%Y %H:%M:%S")
         current_time = datetime.now()
 
         # Berechne die Zeitdifferenz
@@ -158,7 +157,7 @@ class Haushaltsverwaltung:
             return f"vor {int(hours)} Stunden"
         else:  # mehr als ein Tag
             # Gebe das Datum der letzten Änderung im Format "DD-MM-YYYY" zurück
-            return last_checked_time.strftime("%d-%m-%Y")
+            return last_checked_time.strftime("%d.%m.%Y")
 
     def renamePlan(self, id, newName):
         self.cursor.execute("UPDATE Haushaltsplaene SET name = ? WHERE id = ?", (newName, id))

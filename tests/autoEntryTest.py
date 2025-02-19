@@ -9,11 +9,11 @@ class TestHaushaltsverwaltung(unittest.TestCase):
         self.hw._create_tables()  # Erstelle die Tabellen
 
         # Füge einen wiederkehrenden Eintrag hinzu, der mit dem bestehenden Plan verknüpft ist
-        self.hw.addEintrag(1, 'Wiederkehrender Eintrag', 100, 'Test', 'Ausgaben', '01-01-2023', reihe=1, intervall='monatlich', von='01-01-2023', bis='31-12-2023')
+        self.hw.addEintrag(1, 'Wiederkehrender Eintrag', 100, 'Test', 'Ausgaben', '01.01.2023', reihe=1, intervall='monatlich', von='01.01.2023', bis='31.12.2023')
 
     def test_autoAddEntry(self):
         # Setze die Zeit auf einen Punkt, an dem neue Einträge erstellt werden sollten
-        old_time = datetime.strptime('01-01-2023', "%d-%m-%Y")
+        old_time = datetime.strptime('01.01.2023', "%d.%m.%Y")
         self.hw.updateLastChecked(1)  # Aktualisiere den letzten Prüfzeitpunkt
 
         # Führe die autoAddEntry-Funktion aus
@@ -28,7 +28,7 @@ class TestHaushaltsverwaltung(unittest.TestCase):
 
         # Überprüfe, ob die Einträge im richtigen Intervall liegen
         for entry in entries:
-            eintrag_datum = datetime.strptime(entry[6], "%d-%m-%Y")  # Datum ist im 7. Feld
+            eintrag_datum = datetime.strptime(entry[6], "%d.%m.%Y")  # Datum ist im 7. Feld
             print(f"old_time: {old_time}, eintrag_datum: {eintrag_datum}, current_time: {datetime.now()}")  # Debugging-Ausgabe
             self.assertTrue(old_time < eintrag_datum, "Der Eintrag sollte nach dem alten Datum liegen.")
 

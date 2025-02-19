@@ -26,7 +26,7 @@ def test_haushaltsverwaltung():
 
     # Test 5: Filter nach Datum
     print("\nTest 5: Filter nach Datum (2025-01-12)")
-    eintraege = verwaltung.fetchAllEintraege(1, filter_date='12-01-2025')
+    eintraege = verwaltung.fetchAllEintraege(1, filter_date='12.01.2025')
     print(eintraege)
 
     # Test 6: Filter nach Wert von
@@ -51,7 +51,7 @@ def test_haushaltsverwaltung():
         filter_name='Neues Gehalt',
         filter_bereich='Arbeit',
         filter_typ='Einkommen',
-        filter_date='12-01-2025',
+        filter_date='12.01.2025',
         filter_wert_von=1000.0,
         filter_wert_bis=3000.0
     )
@@ -59,7 +59,7 @@ def test_haushaltsverwaltung():
 
     # Test 10: Eintrag umbenennen
     print("\nTest 10: Eintrag umbenennen")
-    verwaltung.renameEintrag(1, 1, 'Neues Gehalt', 3000, 'Arbeit', 'Einkommen', '12-01-2025')
+    verwaltung.renameEintrag(1, 1, 'Neues Gehalt', 3000, 'Arbeit', 'Einkommen', '12.01.2025')
     eintraege = verwaltung.fetchAllEintraege(1)
     print(eintraege)
 
