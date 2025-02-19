@@ -3,7 +3,7 @@ import sqlite3
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QLabel, QLineEdit, QComboBox, QSpinBox, QPushButton, QVBoxLayout, QHBoxLayout, QDateEdit, QMessageBox
 
-class NewEntryGUI(QtWidgets.QDialog):  # Jetzt QDialog statt QWidget!
+class NewEntryGUI(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Neuen Eintrag erstellen")
@@ -59,8 +59,8 @@ class NewEntryGUI(QtWidgets.QDialog):  # Jetzt QDialog statt QWidget!
 
         self.setLayout(layout)
 
-    def save_entry(self):
-        """Speichert den neuen Eintrag in die Datenbank."""
+    # Speichert den neuen Eintrag in die Datenbank.
+    '''def save_entry(self):
 
         name = self.name_input.text()
         entry_type = self.type_dropdown.currentText()
@@ -72,19 +72,18 @@ class NewEntryGUI(QtWidgets.QDialog):  # Jetzt QDialog statt QWidget!
             QMessageBox.warning(self, "Fehler", "Der Name darf nicht leer sein.")
             return
 
-        conn = sqlite3.connect("../data/Haushaltsplan.db")
+        conn = sqlite3.connect("../data/Haushaltspläne.db")
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO Eintraege (name, wert, typ, datum, bereich) VALUES (?, ?, ?, ?, ?)",
+        cursor.execute("INSERT INTO Eintraege (name, wert, typ, datum, bereich) VALUES (?, ?, ?, ?, ?, ?)",
                        (name, value, entry_type, date, category))
         print(cursor.fetchone())  # Sollte ('Eintraege',)
         conn.commit()
         conn.close()
 
         QMessageBox.information(self, "Erfolgreich", "Eintrag wurde gespeichert.")
-        self.accept()  # Fenster schließen
+        self.accept()  # Fenster schließen'''
 
-"""if __name__ == "__main__":
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = NewEntryGUI()
     window.exec_()  # Nutzt exec_(), damit es modal bleibt
-"""

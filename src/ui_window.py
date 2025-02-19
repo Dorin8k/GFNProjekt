@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QTableWidget, QVBoxLayout, QHBoxLayout, QWidget,
     QSpinBox, QDateEdit
 )
-from data.database import HaushaltsverwaltungDatenbank
+from data.database import Haushaltsverwaltung
 from PyQt5.QtGui import QIcon, QColor, QBrush
 from PyQt5.QtCore import Qt
 from src.edit_entry_gui import EditEntryGUI
@@ -197,8 +197,9 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
     def mouseReleaseEvent(self, event):
         self.old_pos = None
 
+    # Ändert das Jahr basierend auf den Pfeiltasten und aktualisiert das Bis-Datum.
     def change_year(self, step):
-        """Ändert das Jahr basierend auf den Pfeiltasten und aktualisiert das Bis-Datum."""
+
         if self.year_dropdown.currentText() == "Alle Jahre":
             return  # Kein Wechsel, wenn "Alle Jahre" ausgewählt ist
 
@@ -215,21 +216,21 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
 
         self.filter_table()
 
+    # Ändert den Monat basierend auf den Pfeiltasten, ohne 'Alle Monate' als Option & ohne Absturz.
     def change_month(self, step):
-        """Ändert den Monat basierend auf den Pfeiltasten, ohne 'Alle Monate' als Option & ohne Absturz."""
         current_index = self.month_dropdown.currentIndex()
 
         # Falls "Alle Monate" aktiv ist, springe direkt zu Januar (beim Vorwärtsklick) oder Dezember (beim Rückwärtsklick)
         if current_index == 0:
             new_index = 1 if step > 0 else 12
         else:
-            new_index = current_index + step  # Normaler Monatswechsel
+            new_index = current_index + step
 
-        # Falls der Index außerhalb von 1-12 geht, umschließen (Fehlerquelle beseitigen)
+        # Falls der Index außerhalb von 1-12 geht, umschließen
         if new_index < 1:
             new_index = 12
         elif new_index > 12:
-            new_index = 1  # FIX: Jetzt geht der Wechsel von November → Dezember sauber!
+            new_index = 1
 
         self.month_dropdown.setCurrentIndex(new_index)
 
@@ -237,6 +238,7 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
         selected_year = int(
             self.year_dropdown.currentText()) if self.year_dropdown.currentText() != "Alle Jahre" else self.current_year
 
+        # den ersten Tag auf 1. des Monats und den letzten Tag importieren
         first_day = 1  # **Immer auf den 1. des Monats setzen**
         last_day = (datetime.date(selected_year, new_index, 28) + datetime.timedelta(
             days=4)).day  # Automatisch letzter Tag des Monats
@@ -248,7 +250,7 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
 
     '''def filter_table(self):
         """Filtert die Einträge basierend auf den ausgewählten Filtern und aktualisiert die Tabelle."""
-        conn = sqlite3.connect("../data/Haushaltsplan.db")
+        conn = sqlite3.connect("../data/Haushaltspläne.db")
         cursor = conn.cursor()
 
         # 📝 Basis-SQL-Abfrage (1=1 sorgt dafür, dass wir Bedingungen flexibel hinzufügen können)
@@ -343,7 +345,7 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
         self.update_last_update_label()
 
     def init_database(self):
-        conn = sqlite3.connect("../data/Haushaltsplan.db")
+        conn = sqlite3.connect("../data/Haushaltspläne.db")
         cursor = conn.cursor()
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS Eintraege (
@@ -360,7 +362,7 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
         conn.close()
     '''
     def load_data(self):
-        conn = sqlite3.connect("../data/Haushaltsplan.db")
+        conn = sqlite3.connect("../data/Haushaltspläne.db")
         cursor = conn.cursor()
         cursor.execute("SELECT eintragid, name, wert, typ, datum, bereich FROM Eintraege")
         rows = cursor.fetchall()
@@ -386,21 +388,22 @@ class HaushaltsGUI(QtWidgets.QMainWindow):
 
             self.table.setCellWidget(row_index, 5, action_widget)
 
+    #Öffnet das Fenster zum Erstellen eines neuen Eintrags.
     def open_new_entry_window(self):
-        """Öffnet das Fenster zum Erstellen eines neuen Eintrags."""
         self.new_entry_window = NewEntryGUI(self)
         self.new_entry_window.show()
 
+    # Öffnet das Bearbeitungsfenster für einen Eintrag.
     def open_edit_window(self, entry_id):
-        """Öffnet das Bearbeitungsfenster für einen Eintrag."""
         self.edit_window = EditEntryGUI(entry_id)
         self.edit_window.show()
 
+    # Löscht einen Eintrag nach Bestätigung.
     def delete_entry(self, entry_id):
-        """Löscht einen Eintrag nach Bestätigung."""
+
         reply = QMessageBox.question(self, "Löschen", "Eintrag wirklich löschen?", QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
-            conn = sqlite3.connect("../data/Haushaltsplan.db")
+            conn = sqlite3.connect("../data/Haushaltspläne.db")
             cursor = conn.cursor()
             cursor.execute("DELETE FROM Eintraege WHERE eintragid = ?", (entry_id,))
             conn.commit()
