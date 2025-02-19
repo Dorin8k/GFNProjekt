@@ -103,7 +103,9 @@ class Haushaltsverwaltung:
 
 
 
-
+    def getNamePlan(self, planID):
+        name = self.cursor.execute("SELECT name FROM Haushaltsplaene WHERE id = ?",planID).fetchone()[0]
+        return name
 
 
     def updateLastChecked(self, planid):
@@ -163,14 +165,25 @@ class Haushaltsverwaltung:
         self.cursor.execute("UPDATE Haushaltsplaene SET name = ? WHERE id = ?", (newName, id))
         self.conn.commit()
 
+    def deletePlan(self, planID):
+        self.cursor.execute("DELETE FROM Eintraege WHERE planid = ?", (planID, ))
+        newPlanName = "Haushaltsplan (inaktiv)"
+        self.cursor.execute("UPDATE Haushaltsplaene SET name = ? WHERE id = ?", ("", newPlanName, planID))
 
-    # Komplette Abänderung eines Eintrags bei Bedarf
-    def renameEintrag(self, eintragid, planID, newName, newWert, newBereich, newTyp, newDate):
+
+    def renameEintrag(self, eintragid, planID, newName, newWert, newBereich, newTyp, newDate, intervall=None, von=None, bis=None):
         self.cursor.execute("""
         UPDATE Eintraege 
         SET name = ?, wert = ?, bereich = ?, typ = ?, datum = ?
         WHERE eintragid = ? AND planid = ?
         """, (newName, newWert, newBereich, newTyp, newDate, eintragid, planID ))
+        if intervall:
+            self.cursor.execute("UPDATE Reihe SET intervall = ? WHERE eintragid = ?", (intervall, eintragid))
+        if von:
+            self.cursor.execute("UPDATE Reihe SET von = ? WHERE eintragid = ?", (von, eintragid))
+        if bis:
+            self.cursor.execute("UPDATE Reihe SET bis = ? WHERE eintragid = ?", (bis, eintragid))
+
         self.conn.commit()
 
     def deleteEintrag(self, eintragid, planID):
