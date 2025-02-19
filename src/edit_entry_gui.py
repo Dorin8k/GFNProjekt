@@ -1,5 +1,4 @@
 import sys
-import sqlite3
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QLabel, QLineEdit, QComboBox, QDoubleSpinBox, QPushButton, QVBoxLayout, QHBoxLayout, \
     QWidget, QDateEdit, QMessageBox
@@ -51,9 +50,9 @@ class EditEntryGUI(QtWidgets.QWidget):
         # Buttons
         button_layout = QHBoxLayout()
         self.save_button = QPushButton("Speichern")
-        self.save_button.clicked.connect(self.save_entry)
+        'self.save_button.clicked.connect(self.save_entry)'
         self.cancel_button = QPushButton("Abbrechen")
-        self.cancel_button.clicked.connect(self.close)
+        'self.cancel_button.clicked.connect(self.close)'
 
         button_layout.addWidget(self.save_button)
         button_layout.addWidget(self.cancel_button)
@@ -62,9 +61,10 @@ class EditEntryGUI(QtWidgets.QWidget):
         self.setLayout(layout)
         self.load_entry()
 
+    '''#Lädt die bestehenden Daten des Eintrags aus der Datenbank.
     def load_entry(self):
-        """Lädt die bestehenden Daten des Eintrags aus der Datenbank."""
-        conn = sqlite3.connect("../Haushaltspläne.db")
+        
+        conn = sqlite3.connect("../data/Haushaltsplan.db")
         cursor = conn.cursor()
         cursor.execute("SELECT name, wert, typ, datum, bereich FROM Eintraege WHERE eintragid = ?", (self.entry_id,))
         entry = cursor.fetchone()
@@ -76,9 +76,10 @@ class EditEntryGUI(QtWidgets.QWidget):
             self.type_dropdown.setCurrentText(entry[2])
             self.date_input.setDate(QtCore.QDate.fromString(entry[3], "yyyy-MM-dd"))
             self.category_dropdown.setCurrentText(entry[4])
-
+    
+    # Speichert die bearbeiteten Daten des Eintrags.
     def save_entry(self):
-        """Speichert die bearbeiteten Daten des Eintrags."""
+        
         name = self.name_input.text()
         entry_type = self.type_dropdown.currentText()
         value = self.value_input.value()
@@ -89,7 +90,7 @@ class EditEntryGUI(QtWidgets.QWidget):
             QMessageBox.warning(self, "Fehler", "Der Name darf nicht leer sein.")
             return
 
-        conn = sqlite3.connect("../Haushaltspläne.db")
+        conn = sqlite3.connect("../data/Haushaltsplan.db")
         cursor = conn.cursor()
         cursor.execute("UPDATE Eintraege SET name = ?, wert = ?, typ = ?, datum = ?, bereich = ? WHERE eintragid = ?",
                        (name, value, entry_type, date, category, self.entry_id))
@@ -98,7 +99,7 @@ class EditEntryGUI(QtWidgets.QWidget):
 
         QMessageBox.information(self, "Erfolgreich", "Eintrag wurde aktualisiert.")
         self.close()
-
+'''
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
