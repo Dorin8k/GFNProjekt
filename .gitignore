@@ -1,1 +1,7 @@
 /Haushaltspläne.db
+/__pycache__
+er.name $$user.email$$
+dataSources.xml
+/.idea
+data/Haushaltspläne.db
+tests/Haushaltspläne.db

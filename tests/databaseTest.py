@@ -76,6 +76,11 @@ def test_haushaltsverwaltung():
     verwaltung.cursor.execute("SELECT name FROM Haushaltsplaene WHERE id = 1")
     print("Neuer Name des Plans:", verwaltung.cursor.fetchone())
 
+    # Test 13: Alle Einträge ohne Filter
+    print("Test 13: Alle Einträge ohne Filter")
+    eintraege = verwaltung.fetchAllEintraege(1)
+    print(eintraege)
+
     verwaltung.close()
 
 # Führe die Tests aus

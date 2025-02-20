@@ -15,7 +15,7 @@ def test_addEintrag(haushaltsverwaltung):
         datum = today + timedelta(days=random.randint(1, (30 + 31)))  # Zufälliges Datum in den nächsten 30-61 Tagen
         datum_str = datum.strftime("%d.%m.%Y")
 
-        haushaltsverwaltung.addEintrag(planid=1, name=name, wert=wert, bereich=bereich, typ=typ, datum=datum_str, reihe=None)
+        haushaltsverwaltung.addEintrag(planid=1, name=name, wert=wert, bereich=bereich, typ=typ, datum=datum_str)
 
     # Erstelle 5 wiederkehrende Einträge
     for i in range(5):
@@ -27,7 +27,7 @@ def test_addEintrag(haushaltsverwaltung):
         bis = (today + timedelta(days=random.randint(30, 60))).strftime("%d.%m.%Y")  # Enddatum in 30-60 Tagen
         intervall = random.choice(['täglich', 'wöchentlich', 'monatlich'])  # Zufälliges Intervall
 
-        haushaltsverwaltung.addEintrag(planid=1, name=name, wert=wert, bereich=bereich, typ=typ, datum=von, reihe=None, intervall=intervall, von=von, bis=bis)
+        haushaltsverwaltung.addEintrag(planid=1, name=name, wert=wert, bereich=bereich, typ=typ, datum=von, intervall=intervall, von=von, bis=bis)
 
     # Ausgabe der Einträge
     eintraege = haushaltsverwaltung.fetchAllEintraege(planid=1)
