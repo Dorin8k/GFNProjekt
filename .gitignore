@@ -3,3 +3,5 @@
 er.name $$user.email$$
 dataSources.xml
 /.idea
+data/Haushaltspläne.db
+tests/Haushaltspläne.db
